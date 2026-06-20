@@ -1,263 +1,370 @@
 'use client';
 
 import React, { useState } from 'react';
+import { ThumbsUp, CheckCircle, Award, Camera, Info, ChevronDown, ChevronUp, User, LogOut, Edit2 } from 'lucide-react';
 
-export default function GolfCourseTracker() {
-  const [showGuide, setShowGuide] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+export default function GolfPlatform() {
+  const [view, setView] = useState<'home' | 'community' | 'account'>('home');
+  const [activeTab, setActiveTab] = useState<'nearMe' | 'topRated' | 'trending' | 'myCourses'>('nearMe');
+  const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
+  const [showGuideInsideModal, setShowGuideInsideModal] = useState(false);
+  const [savedCourses, setSavedCourses] = useState<number[]>([1, 3]);
 
-  const [courseData] = useState({
-    name: "Pelican Hill Golf Club (Ocean South)",
-    phone: "(949) 467-6800",
-    website: "https://www.pelicanhill.com",
-    baseGreenFee: 315,
-    cartFee: 0,
-    aerationDate: "October 12, 2026",
-    stimp: 11.2,
-    conditions: {
-      teeBoxes: 4.5,
-      fairways: 4.7,
-      rough: 3.8,
-      bunkers: 4.2
-    },
-    lastUpdated: "2 hours ago"
+  // Auth & Profile States
+  const [isLoggedIn, setIsLoggedIn] = useState(true); // Set to true to show the profile demo immediately
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  
+  const [userProfile, setUserProfile] = useState({
+    username: 'Garrett_G96',
+    email: 'garrett.g@example.com',
+    phone: '(310) 555-0192',
+    handicap: '2.4',
+    nicestCourse: 'Pebble Beach Golf Links',
+    avatarUrl: '' // Blank by default to show the placeholder
   });
 
-  const [recentReviews] = useState([
-    {
-      id: 1,
-      username: "Garrett_G96",
-      handicap: 2.4,
-      experience: "12 years",
-      nicestCourse: "Pebble Beach Golf Links",
-      frequency: "2-3 times a week",
-      date: "Today, 10:30 AM",
-      stimpGiven: 11.5,
-      avgConditionGiven: 4.8,
-      comment: "Greens are pure right now, rolling true to the line. Fairways are immaculate."
+  const [signUpForm, setSignUpForm] = useState({
+    username: '', yearsPlayed: '', handicap: '', phone: '', password: '', email: '', nicestCourse: ''
+  });
+
+  // Course Database with your exact Image URLs and Websites
+  const [courses] = useState([
+    { 
+      id: 1, name: 'Rustic Canyon Golf Course', location: 'Moorpark, CA', rating: 4.8, trendingUp: true, distance: '34 mi', stimp: 11.8, fee: 95, 
+      phone: '(805) 530-0221', website: 'https://www.rusticcanyongolfclub.org/', aeration: 'September 14, 2026',
+      imageUrl: 'https://www.rusticcanyongolfclub.org/images/template/slideshow3.jpg',
+      conditions: { teeBoxes: 4.8, fairways: 4.9, rough: 4.5, bunkers: 4.6 }
     },
-    {
-      id: 2,
-      username: "MuniManiac",
-      handicap: 22.1,
-      experience: "1 year",
-      nicestCourse: "Griffith Park (Wilson)",
-      frequency: "1-2 times a month",
-      date: "Yesterday",
-      stimpGiven: 9.0,
-      avgConditionGiven: 5.0,
-      comment: "Nicest grass I have ever seen! Unbelievable course, everything looked perfect to me."
+    { 
+      id: 2, name: 'Rancho Park Golf Course', location: 'Los Angeles, CA', rating: 3.9, trendingUp: false, distance: '4 mi', stimp: 8.5, fee: 48, 
+      phone: '(310) 838-7373', website: 'https://www.golf.lacity.org', aeration: 'October 05, 2026',
+      imageUrl: 'https://golf-pass.brightspotcdn.com/dims4/default/8dc1b35/2147483647/strip/true/crop/750x484+60+0/resize/930x600!/format/webp/quality/90/?url=https%3A%2F%2Fgolf-pass-brightspot.s3.amazonaws.com%2Fb3%2F64%2F140b3c2d8dc1d93f807431ddd698%2F88451.jpg', // Working placeholder for Rancho
+      conditions: { teeBoxes: 3.5, fairways: 4.1, rough: 3.8, bunkers: 3.2 }
+    },
+    { 
+      id: 3, name: 'Angeles National Golf Club', location: 'Sunland, CA', rating: 4.5, trendingUp: true, distance: '18 mi', stimp: 11.0, fee: 165, 
+      phone: '(818) 951-8771', website: 'https://www.angelesnational.com/', aeration: 'September 21, 2026',
+      imageUrl: 'https://www.angelesnational.com/wp-content/uploads/sites/5946/2023/02/ANGELESNATIONAL-06.jpg?w=1024',
+      conditions: { teeBoxes: 4.6, fairways: 4.5, rough: 4.2, bunkers: 4.5 }
+    },
+    { 
+      id: 4, name: 'Simi Hills Golf Course', location: 'Simi Valley, CA', rating: 4.2, trendingUp: false, distance: '29 mi', stimp: 9.8, fee: 72, 
+      phone: '(805) 522-0803', website: 'https://www.simihillsgolf.com/', aeration: 'September 28, 2026',
+      imageUrl: 'https://www.simihillsgolf.com/images/slider2/showcase5.jpg',
+      conditions: { teeBoxes: 4.1, fairways: 4.3, rough: 4.0, bunkers: 3.9 }
+    },
+    { 
+      id: 5, name: 'Chester Washington Golf Course', location: 'Los Angeles, CA', rating: 3.6, trendingUp: false, distance: '11 mi', stimp: 8.2, fee: 42, 
+      phone: '(323) 756-2516', website: 'https://www.chesterwashington.com/', aeration: 'October 12, 2026',
+      imageUrl: 'https://www.chesterwashington.com/wp-content/uploads/sites/9/2021/10/CWGC-1074-1024x683.jpg',
+      conditions: { teeBoxes: 3.2, fairways: 3.7, rough: 3.5, bunkers: 3.0 }
     }
   ]);
 
+  // Dynamic Community Reports (Using distinct review photos)
+  const [communityReports, setCommunityReports] = useState([
+    {
+      id: 101, username: 'ScratchLA', handicap: '1.2', courseName: 'Rustic Canyon Golf Course',
+      text: 'Greens are tracking perfectly true this afternoon. Very little ball mark damage. Bunkers are completely raked out.',
+      timestamp: '2 hours ago',
+      reviewPhoto: 'https://images.unsplash.com/photo-1593111774240-d529f12eb4ea?auto=format&fit=crop&w=800&q=80', // Distinct close-up photo
+      reactions: { helpful: 8, accurate: 5, pristine: 3 }
+    },
+    {
+      id: 102, username: 'MuniManiac', handicap: '22.1', courseName: 'Rancho Park Golf Course',
+      text: 'Fairway landing zones are clear but rough is incredibly thick. Pace of play was slightly delayed.',
+      timestamp: 'Yesterday',
+      reviewPhoto: null, // Null value handles the optional rendering perfectly
+      reactions: { helpful: 2, accurate: 0, pristine: 1 }
+    }
+  ]);
+
+  const [individualReports] = useState([
+    { id: 201, courseId: 1, username: 'ScratchLA', handicap: '1.2', date: 'Today, 10:30 AM', stimpGiven: '11.8', text: 'Fairways are pure right now, rolling true to the line.', score: 4.8 },
+    { id: 202, courseId: 2, username: 'MuniManiac', handicap: '22.1', date: 'Yesterday', stimpGiven: '8.5', text: 'Greens have a few bare spots but fairways are fine for a muni.', score: 3.9 }
+  ]);
+
+  const incrementReaction = (reportId: number, type: 'helpful' | 'accurate' | 'pristine') => {
+    setCommunityReports(communityReports.map(report => report.id === reportId ? { ...report, reactions: { ...report.reactions, [type]: report.reactions[type] + 1 } } : report));
+  };
+
+  const getFilteredCourses = () => {
+    let list = [...courses];
+    if (activeTab === 'topRated') return list.sort((a, b) => b.rating - a.rating);
+    if (activeTab === 'trending') return list.filter(c => c.trendingUp);
+    if (activeTab === 'myCourses') return list.filter(c => savedCourses.includes(c.id));
+    return list;
+  };
+
+  const handleProfileSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsEditingProfile(false);
+    alert('Profile updated securely.');
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased pb-12 relative">
+    <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans antialiased pb-24">
       
-      {/* Mobile Top Header Banner */}
-      <header className="bg-emerald-800 text-white px-4 py-6 shadow-md sticky top-0 z-40">
-        <div className="max-w-md mx-auto">
-          <span className="text-xs font-bold tracking-wider uppercase bg-emerald-700 px-2.5 py-1 rounded-full text-emerald-100">Live Conditions</span>
-          <h1 className="text-xl font-black mt-1 tracking-tight">{courseData.name}</h1>
+      {/* Header */}
+      <header className="bg-neutral-900 text-white px-6 py-4 sticky top-0 z-40 border-b border-neutral-800 shadow-sm">
+        <div className="max-w-md mx-auto flex justify-between items-center">
+          <span className="text-xs font-black tracking-widest text-neutral-100 uppercase cursor-pointer" onClick={() => setView('home')}>
+            GOLFTRAC
+          </span>
+          {!isLoggedIn ? (
+            <button onClick={() => setView('account')} className="text-[10px] font-bold uppercase tracking-wider border border-neutral-700 bg-neutral-800 px-3 py-1.5 rounded text-neutral-200">
+              Sign Up / Sign In
+            </button>
+          ) : (
+            <button onClick={() => setView('account')} className="text-[10px] font-bold uppercase tracking-wider border border-emerald-800 bg-emerald-900 px-3 py-1.5 rounded text-emerald-100 flex items-center space-x-1.5">
+              <User size={12} /> <span>My Account</span>
+            </button>
+          )}
         </div>
       </header>
 
-      {/* Main Mobile Viewport Container */}
       <main className="max-w-md mx-auto p-4 space-y-4">
         
-        {/* Aeration Alert */}
-        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-sm">
-          <p className="text-xs font-semibold text-amber-800 uppercase tracking-wider">Upcoming Maintenance</p>
-          <p className="text-sm font-medium text-amber-700 mt-0.5">
-            Scheduled Aerification: <span className="font-bold">{courseData.aerationDate}</span>
-          </p>
-        </div>
-
-        {/* Top Summary Blocks */}
-        <section className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 grid grid-cols-2 gap-4">
-          <div className="bg-emerald-50 rounded-xl p-4 text-center border border-emerald-100/50">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 block">Green Speed</span>
-            <span className="text-3xl font-extrabold text-emerald-900 my-1">{courseData.stimp}</span>
-            <span className="text-[10px] font-semibold text-emerald-700/80 bg-white px-2 py-0.5 rounded-full inline-block shadow-2xs">Avg Stimpmeter</span>
-          </div>
-          
-          <div className="bg-blue-50 rounded-xl p-4 text-center border border-blue-100/50">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-800 block">Weekend Fee</span>
-            <span className="text-3xl font-extrabold text-blue-900 my-1">${courseData.baseGreenFee}</span>
-            <span className="text-[10px] font-semibold text-blue-700/80 bg-white px-2 py-0.5 rounded-full inline-block shadow-2xs">Id/Cart Included</span>
-          </div>
-        </section>
-
-        {/* Full Interactive Rating Guide */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <button 
-            onClick={() => setShowGuide(!showGuide)}
-            className="w-full px-5 py-4 flex justify-between items-center bg-slate-100/60 hover:bg-slate-100 transition-colors"
-          >
-            <div className="flex items-center space-x-2">
-              <span className="text-base">ℹ️</span>
-              <span className="font-bold text-sm text-slate-700">How to rate the conditions?</span>
-            </div>
-            <span className="text-xs font-bold text-emerald-700 bg-white border border-slate-200 px-2.5 py-1 rounded-lg shadow-3xs">
-              {showGuide ? 'Hide Guide ▲' : 'Show Guide ▼'}
-            </span>
-          </button>
-
-          {showGuide && (
-            <div className="p-5 border-t border-slate-100 bg-white space-y-5 text-xs text-slate-600 max-h-[450px] overflow-y-auto">
-              <div>
-                <h4 className="font-extrabold text-slate-800 uppercase tracking-wider border-b pb-1 mb-2.5 text-[11px] text-emerald-800">
-                  General Conditions (Tees, Fairways, Rough, Bunkers, Trueness)
-                </h4>
-                <ul className="space-y-3.5">
-                  <li>
-                    <strong className="text-slate-800 font-black block text-sm border-l-2 border-emerald-600 pl-1.5 mb-1 text-emerald-900">5 — PGA Tour Level</strong> 
-                    Tight and cut fairways. Lush uniform rough with absolutely no bare patches. Optimal bunker sand consistency with no big rocks or wet mud. All tee boxes flat and perfectly level with clean cut grass and no open divots. Greens roll immaculately smooth and true with zero wobble or bouncing.
-                  </li>
-                  <li>
-                    <strong className="text-slate-800 font-black block text-sm border-l-2 border-emerald-400 pl-1.5 mb-1 text-slate-800">4 — Country Club Premium</strong> 
-                    Clean, well-defined fairways with minimal overall wear. Consistently thick and cut rough. Bunkers are properly maintained and raked with good soft sand. Tee boxes are completely flat and mostly clear of severe divot damage. Greens roll highly consistent and true with minor cosmetic blemishes.
-                  </li>
-                  <li>
-                    <strong className="text-slate-800 font-black block text-sm border-l-2 border-amber-400 pl-1.5 mb-1 text-slate-800">3 — Average Public / Resort</strong> 
-                    Fairways show normal weekend wear, featuring typical light brown or thin patches. Rough is patchy in a few areas but completely playable. Bunkers might be firmly packed down or a bit crusty. Tee boxes have noticeable divots but offer plenty of level hitting areas. Greens roll okay but might bounce slightly offline.
-                  </li>
-                  <li>
-                    <strong className="text-slate-800 font-black block text-sm border-l-2 border-orange-400 pl-1.5 mb-1 text-slate-800">2 — Below Average</strong> 
-                    Fairways are rough around the edges with scattered hardpan or bare dirt patches. Rough has significant weed clusters or completely barren zones. Bunkers are unraked, rocky, or muddy. Tee boxes are uneven or heavily chewed up. Greens are bumpy, scarred, or showing signs of high stress.
-                  </li>
-                  <li>
-                    <strong className="text-slate-800 font-black block text-sm border-l-2 border-red-500 pl-1.5 mb-1 text-red-950">1 — Minimal Maintenance Muni</strong> 
-                    Fairways overgrown and contain multiple dry patches. Inconsistent rough with bare patches and dry spots. Hard sand with rocks, mud, or hard pan. Very little to no tee boxes that are flat and level, featuring overgrown grass and lots of unfilled divots. Greens are shaggy, bumpy, or scarred.
-                  </li>
-                </ul>
-              </div>
-
-              <div className="pt-3 border-t border-dashed border-slate-200">
-                <h4 className="font-extrabold text-slate-800 uppercase tracking-wider border-b pb-1 mb-2 text-[11px] text-blue-800">
-                  Green Speed Scale (Stimpmeter)
-                </h4>
-                <ul className="space-y-1.5 font-medium">
-                  <li className="flex justify-between items-center"><span className="font-bold text-slate-700">⚡ 13 – 15</span> <span className="text-slate-500">Major Championship / US Open Speed</span></li>
-                  <li className="flex justify-between items-center"><span className="font-bold text-slate-700">⛳ 11 – 12</span> <span className="text-slate-500">PGA Tour Speed</span></li>
-                  <li className="flex justify-between items-center"><span className="font-bold text-slate-700">🏌️‍♂️ 9 – 10</span> <span className="text-slate-500">Standard Public Course Speed</span></li>
-                  <li className="flex justify-between items-center"><span className="font-bold text-slate-700">🐌 8 & Below</span> <span className="text-slate-500">Slow Muni Speed</span></li>
-                </ul>
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* Course Conditions Section */}
-        <section className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-            <h2 className="font-bold text-base text-slate-800">Course Conditions</h2>
-            <span className="text-[11px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">Updated {courseData.lastUpdated}</span>
-          </div>
-
-          <div className="space-y-3.5">
-            {[
-              { label: "Tee Boxes", value: courseData.conditions.teeBoxes },
-              { label: "Fairways", value: courseData.conditions.fairways },
-              { label: "Rough", value: courseData.conditions.rough },
-              { label: "Bunkers", value: courseData.conditions.bunkers }
-            ].map((item, index) => (
-              <div key={index} className="space-y-1">
-                <div className="flex justify-between text-xs font-bold text-slate-600">
-                  <span>{item.label}</span>
-                  <span className="text-emerald-700 font-extrabold">{item.value} / 5.0</span>
-                </div>
-                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                  <div className="bg-emerald-600 h-full rounded-full" style={{ width: `${(item.value / 5) * 100}%` }}/>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Recent Live Reports */}
-        <section className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
-          <h2 className="font-bold text-base text-slate-800 border-b border-slate-100 pb-2">Recent Live Reports</h2>
-          
-          <div className="space-y-3 divide-y divide-slate-100">
-            {recentReviews.map((review) => (
-              <div key={review.id} className="pt-3 first:pt-0 space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <button 
-                    onClick={() => setSelectedUser(review)}
-                    className="text-sm font-bold text-emerald-800 hover:underline flex items-center space-x-1"
+        {/* VIEW 1: HOME DIRECTORY */}
+        {view === 'home' && (
+          <>
+            <div className="flex space-x-1 overflow-x-auto border-b border-neutral-200 pb-1">
+              {['Near Me', 'Top Rated', 'Trending', 'Saved'].map((label, idx) => {
+                const keys = ['nearMe', 'topRated', 'trending', 'myCourses'];
+                return (
+                  <button
+                    key={label}
+                    onClick={() => setActiveTab(keys[idx] as any)}
+                    className={`text-[10px] font-bold uppercase tracking-wider px-4 py-2.5 rounded transition-all ${
+                      activeTab === keys[idx] ? 'bg-neutral-900 text-white' : 'bg-white border border-neutral-200 text-neutral-500'
+                    }`}
                   >
-                    <span>👤 {review.username}</span>
-                    <span className="text-[10px] bg-slate-100 font-medium text-slate-500 px-1.5 py-0.5 rounded-md ml-1">
-                      HCP: {review.handicap}
-                    </span>
+                    {label}
                   </button>
-                  <span className="text-[11px] text-slate-400">{review.date}</span>
+                );
+              })}
+            </div>
+
+            <section className="space-y-3">
+              {getFilteredCourses().map((course) => (
+                <div key={course.id} onClick={() => { setSelectedCourse(course); setShowGuideInsideModal(false); }} className="bg-white rounded-lg border border-neutral-200 overflow-hidden hover:border-neutral-400 transition-all cursor-pointer flex flex-col">
+                  <div className="w-full h-36 bg-neutral-200 relative">
+                    <img src={course.imageUrl} alt={course.name} className="w-full h-full object-cover filter brightness-[0.9]" />
+                    <div className="absolute top-3 right-3 bg-neutral-900/80 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded">
+                      ${course.fee} Base
+                    </div>
+                  </div>
+                  <div className="p-4 space-y-1">
+                    <h3 className="font-extrabold text-sm text-neutral-900 tracking-tight">{course.name}</h3>
+                    <p className="text-xs text-neutral-400 font-semibold">{course.location} • {course.distance}</p>
+                    <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                      Condition Score: <span className="text-neutral-900 font-black">{course.rating} / 5.0</span>
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="flex space-x-2 text-[11px]">
-                  <span className="bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded font-medium">Stimp: {review.stimpGiven}</span>
-                  <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium">Conditions: {review.avgConditionGiven}/5</span>
-                </div>
-                
-                <p className="text-xs text-slate-600 italic">"{review.comment}"</p>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </section>
+          </>
+        )}
 
-        {/* Directory Logistics Card */}
-        <section className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
-          <h2 className="font-bold text-base text-slate-800 border-b border-slate-100 pb-2">Course Information</h2>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-slate-500 font-medium">Phone</span>
-            <a href={`tel:${courseData.phone}`} className="text-emerald-700 font-bold">{courseData.phone}</a>
-          </div>
-        </section>
-
-      </main>
-
-      {/* Dynamic Pop-Up Modal: Golfer Profile Insights */}
-      {selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl space-y-4">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-2">
+        {/* VIEW 2: COMMUNITY */}
+        {view === 'community' && (
+          <section className="space-y-4">
+            <div className="bg-white p-4 rounded-lg border border-neutral-200 flex justify-between items-center">
               <div>
-                <h3 className="text-base font-black text-slate-900">@{selectedUser.username}</h3>
-                <p className="text-xs text-emerald-700 font-bold">Verified Golfer Profile</p>
+                <h2 className="font-black text-xs text-neutral-900 uppercase tracking-wider">Condition Monitoring Feed</h2>
+                <p className="text-[11px] font-semibold text-neutral-400">Crowdsourced verification logs</p>
               </div>
-              <button 
-                onClick={() => setSelectedUser(null)}
-                className="text-slate-400 hover:text-slate-600 font-bold text-sm bg-slate-100 w-6 h-6 rounded-full flex items-center justify-center"
-              >
-                ✕
+              <button className="p-2 bg-neutral-50 border border-neutral-200 rounded text-neutral-700 flex items-center space-x-1 text-xs font-bold uppercase tracking-wider">
+                <Camera size={13} /> <span>Upload</span>
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Course Handicap</span>
-                <span className="text-lg font-black text-slate-800">{selectedUser.handicap}</span>
+            <div className="space-y-3">
+              {communityReports.map((report) => (
+                <div key={report.id} className="bg-white p-4 rounded-lg border border-neutral-200 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-bold text-neutral-900 text-xs block">@{report.username}</span>
+                      <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider mt-0.5 block">{report.courseName}</span>
+                    </div>
+                    <span className="text-[10px] text-neutral-400 font-medium">{report.timestamp}</span>
+                  </div>
+                  
+                  <p className="text-neutral-600 text-xs font-medium leading-relaxed">"{report.text}"</p>
+                  
+                  {/* Strict Conditional Rendering: Only displays if a photo actually exists */}
+                  {report.reviewPhoto && (
+                    <div className="w-full h-40 bg-neutral-100 rounded overflow-hidden border border-neutral-200">
+                      <img src={report.reviewPhoto} alt="Review attachment" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+
+                  <div className="flex items-center space-x-2 border-t border-neutral-100 pt-3">
+                    <button onClick={() => incrementReaction(report.id, 'helpful')} className="flex items-center space-x-1 text-[11px] font-bold text-neutral-500 bg-neutral-50 border border-neutral-200 px-2.5 py-1 rounded">
+                      <ThumbsUp size={11} /> <span>Helpful ({report.reactions.helpful})</span>
+                    </button>
+                    <button onClick={() => incrementReaction(report.id, 'accurate')} className="flex items-center space-x-1 text-[11px] font-bold text-neutral-500 bg-neutral-50 border border-neutral-200 px-2.5 py-1 rounded">
+                      <CheckCircle size={11} /> <span>Accurate ({report.reactions.accurate})</span>
+                    </button>
+                    <button onClick={() => incrementReaction(report.id, 'pristine')} className="flex items-center space-x-1 text-[11px] font-bold text-neutral-500 bg-neutral-50 border border-neutral-200 px-2.5 py-1 rounded">
+                      <Award size={11} /> <span>Pristine ({report.reactions.pristine})</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* VIEW 3: ACCOUNT & AUTHENTICATION */}
+        {view === 'account' && (
+          <section className="space-y-4">
+            {!isLoggedIn ? (
+              /* Auth Form Portal */
+              <div className="bg-white rounded-lg p-6 border border-neutral-200 shadow-xs space-y-5">
+                <div className="flex border-b border-neutral-100 pb-3">
+                  <button onClick={() => setAuthMode('signin')} className={`flex-1 text-center pb-2 text-xs font-bold uppercase tracking-wider ${authMode === 'signin' ? 'text-emerald-800 border-b-2 border-emerald-800' : 'text-neutral-400'}`}>Sign In</button>
+                  <button onClick={() => setAuthMode('signup')} className={`flex-1 text-center pb-2 text-xs font-bold uppercase tracking-wider ${authMode === 'signup' ? 'text-emerald-800 border-b-2 border-emerald-800' : 'text-neutral-400'}`}>Create Account</button>
+                </div>
+                
+                {authMode === 'signup' ? (
+                  <form onSubmit={(e) => { e.preventDefault(); setIsLoggedIn(true); }} className="space-y-4">
+                    <input type="text" required placeholder="Username *" value={signUpForm.username} onChange={(e) => setSignUpForm({...signUpForm, username: e.target.value})} className="w-full bg-neutral-50 border border-neutral-200 rounded py-2 px-3 text-sm" />
+                    <input type="email" required placeholder="Email Address *" value={signUpForm.email} onChange={(e) => setSignUpForm({...signUpForm, email: e.target.value})} className="w-full bg-neutral-50 border border-neutral-200 rounded py-2 px-3 text-sm" />
+                    <input type="password" required placeholder="Password *" value={signUpForm.password} onChange={(e) => setSignUpForm({...signUpForm, password: e.target.value})} className="w-full bg-neutral-50 border border-neutral-200 rounded py-2 px-3 text-sm" />
+                    <button type="submit" className="w-full bg-emerald-800 text-white font-bold py-3 px-4 rounded text-xs uppercase">Sign Up Securely</button>
+                  </form>
+                ) : (
+                  <form onSubmit={(e) => { e.preventDefault(); setIsLoggedIn(true); }} className="space-y-4">
+                    <input type="text" required placeholder="Username or Email" className="w-full bg-neutral-50 border border-neutral-200 rounded py-2 px-3 text-sm" />
+                    <input type="password" required placeholder="Password" className="w-full bg-neutral-50 border border-neutral-200 rounded py-2 px-3 text-sm" />
+                    <button type="submit" className="w-full bg-emerald-800 text-white font-bold py-3 px-4 rounded text-xs uppercase">Sign In</button>
+                  </form>
+                )}
               </div>
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Years Playing</span>
-                <span className="text-lg font-black text-slate-800">{selectedUser.experience}</span>
+            ) : (
+              /* Logged In Profile Dashboard */
+              <div className="bg-white rounded-lg p-6 border border-neutral-200 shadow-xs space-y-6">
+                
+                {/* Profile Picture Module */}
+                <div className="flex flex-col items-center space-y-3">
+                  <div className="w-24 h-24 rounded-full bg-neutral-100 border-4 border-white shadow-sm relative flex items-center justify-center">
+                    {userProfile.avatarUrl ? (
+                      <img src={userProfile.avatarUrl} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      <User size={40} className="text-neutral-300" />
+                    )}
+                    <button className="absolute bottom-0 right-0 bg-emerald-800 p-2 rounded-full text-white shadow-md hover:bg-emerald-700 transition-colors">
+                      <Camera size={14} />
+                    </button>
+                  </div>
+                  <div className="text-center">
+                    <h2 className="text-lg font-black text-neutral-900">@{userProfile.username}</h2>
+                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Verified Auditor</p>
+                  </div>
+                </div>
+
+                {/* Editable Form Data */}
+                <form onSubmit={handleProfileSave} className="space-y-4 border-t border-neutral-100 pt-5">
+                  <div className="flex justify-between items-center pb-2">
+                    <span className="text-xs font-black uppercase tracking-wider text-neutral-800">Account Details</span>
+                    <button type="button" onClick={() => setIsEditingProfile(!isEditingProfile)} className="text-[10px] flex items-center space-x-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
+                      <Edit2 size={10} /> <span>{isEditingProfile ? 'Cancel' : 'Edit'}</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-neutral-400">Email Address</label>
+                      <input disabled={!isEditingProfile} type="email" value={userProfile.email} onChange={(e) => setUserProfile({...userProfile, email: e.target.value})} className="w-full bg-neutral-50 border border-neutral-200 rounded py-2 px-3 text-xs text-neutral-800 disabled:opacity-60" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-neutral-400">Phone</label>
+                        <input disabled={!isEditingProfile} type="tel" value={userProfile.phone} onChange={(e) => setUserProfile({...userProfile, phone: e.target.value})} className="w-full bg-neutral-50 border border-neutral-200 rounded py-2 px-3 text-xs text-neutral-800 disabled:opacity-60" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-neutral-400">Handicap</label>
+                        <input disabled={!isEditingProfile} type="text" value={userProfile.handicap} onChange={(e) => setUserProfile({...userProfile, handicap: e.target.value})} className="w-full bg-neutral-50 border border-neutral-200 rounded py-2 px-3 text-xs text-neutral-800 disabled:opacity-60" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-neutral-400">Nicest Course Played</label>
+                      <input disabled={!isEditingProfile} type="text" value={userProfile.nicestCourse} onChange={(e) => setUserProfile({...userProfile, nicestCourse: e.target.value})} className="w-full bg-neutral-50 border border-neutral-200 rounded py-2 px-3 text-xs text-neutral-800 disabled:opacity-60" />
+                    </div>
+                  </div>
+
+                  {isEditingProfile && (
+                    <button type="submit" className="w-full bg-emerald-800 text-white font-bold py-3 rounded text-xs uppercase tracking-wider mt-4">Save Changes</button>
+                  )}
+                </form>
+
+                <button onClick={() => setIsLoggedIn(false)} className="w-full border border-neutral-200 bg-neutral-50 text-neutral-600 font-bold py-3 rounded text-xs uppercase tracking-wider flex items-center justify-center space-x-2 hover:bg-neutral-100">
+                  <LogOut size={14} /> <span>Sign Out</span>
+                </button>
               </div>
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Play Frequency</span>
-                <span className="text-sm font-bold text-slate-800 mt-1 block">{selectedUser.frequency}</span>
+            )}
+          </section>
+        )}
+      </main>
+
+      {/* DETAILED COURSE MODAL */}
+      {selectedCourse && (
+        <div className="fixed inset-0 bg-neutral-950/60 flex items-end justify-center z-50" onClick={() => setSelectedCourse(null)}>
+          <div className="bg-white rounded-t-2xl w-full max-w-md p-6 space-y-4 max-h-[85vh] overflow-y-auto border-t border-neutral-200 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start border-b border-neutral-100 pb-3">
+              <div>
+                <h2 className="text-sm font-black text-neutral-900 uppercase tracking-wider">{selectedCourse.name}</h2>
+                <p className="text-xs font-semibold text-neutral-400">{selectedCourse.location}</p>
               </div>
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Nicest Track Played</span>
-                <span className="text-xs font-bold text-emerald-800 mt-1 block truncate">{selectedUser.nicestCourse}</span>
+              <button onClick={() => setSelectedCourse(null)} className="w-6 h-6 bg-neutral-100 font-bold rounded-full flex items-center justify-center text-neutral-400 text-xs">✕</button>
+            </div>
+
+            <img src={selectedCourse.imageUrl} alt={selectedCourse.name} className="w-full h-40 object-cover rounded-md border border-neutral-200" />
+
+            <div className="grid grid-cols-2 gap-3 text-center text-xs">
+              <div className="bg-neutral-50 rounded p-3 border border-neutral-200/60">
+                <span className="text-[9px] font-bold uppercase text-neutral-400 block tracking-wider">Condition Index (Avg)</span>
+                <span className="text-sm font-black text-neutral-900">{selectedCourse.rating} / 5.0</span>
+              </div>
+              <div className="bg-neutral-50 rounded p-3 border border-neutral-200/60">
+                <span className="text-[9px] font-bold uppercase text-neutral-400 block tracking-wider">Velocity (Stimp)</span>
+                <span className="text-sm font-black text-neutral-900">{selectedCourse.stimp}</span>
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-400 text-center italic">
-              *Trust ratings from golfers matching your target skill benchmark.
-            </p>
+            <div className="border border-neutral-200 rounded-md overflow-hidden">
+              <button onClick={() => setShowGuideInsideModal(!showGuideInsideModal)} className="w-full bg-neutral-50 px-4 py-2.5 flex justify-between items-center text-left text-xs font-bold text-neutral-700">
+                <div className="flex items-center space-x-1.5"><Info size={13} className="text-neutral-500" /><span>Condition Assessment Guide</span></div>
+                {showGuideInsideModal ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+              {showGuideInsideModal && (
+                <div className="p-4 bg-white border-t border-neutral-100 text-[11px] text-neutral-600 space-y-3 max-h-48 overflow-y-auto">
+                  <p><strong>5 — PGA Tour Level:</strong> Flat tee boxes, cut fairways, uniform lush rough, smooth zero-wobble greens.</p>
+                  <p><strong>1 — Minimal Maintenance:</strong> Exposed dry fairways, raw dirt patches, shaggy heavily scarred greens.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="border border-neutral-200 bg-neutral-50 p-3 rounded text-xs space-y-2">
+              <div className="flex justify-between font-medium"><span className="text-neutral-400">Scheduled Aeration</span><span className="font-bold text-neutral-700 uppercase tracking-wide">{selectedCourse.aeration}</span></div>
+              <div className="flex justify-between font-medium"><span className="text-neutral-400">Clubhouse Direct</span><a href={`tel:${selectedCourse.phone}`} className="font-bold text-emerald-800 underline">{selectedCourse.phone}</a></div>
+              <div className="flex justify-between font-medium"><span className="text-neutral-400">Digital Gateway</span><a href={selectedCourse.website} target="_blank" rel="noreferrer" className="font-bold text-emerald-800 underline">Visit Web ↗</a></div>
+            </div>
           </div>
         </div>
       )}
+
+      {/* Persistent Bottom Tab Deck Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 py-4 z-40 shadow-xl">
+        <div className="max-w-md mx-auto grid grid-cols-3 text-center text-[10px] font-bold uppercase tracking-wider">
+          <button onClick={() => setView('home')} className={view === 'home' ? 'text-emerald-800' : 'text-neutral-400'}>Directory</button>
+          <button onClick={() => setView('community')} className={view === 'community' ? 'text-emerald-800' : 'text-neutral-400'}>Community</button>
+          <button onClick={() => setView('account')} className={view === 'account' ? 'text-emerald-800' : 'text-neutral-400'}>Account</button>
+        </div>
+      </nav>
     </div>
   );
 }
