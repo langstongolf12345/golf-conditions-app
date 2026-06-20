@@ -4,6 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { Camera, Info, ChevronDown, ChevronUp, User, LogOut, Edit2, Send, Plus, Star, Image as ImageIcon, Heart } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
+interface ChatMessage {
+  id: number;
+  username: string;
+  text: string;
+  timestamp: string;
+  isSystem: boolean;
+  image: string | null; // This allows the image to be a URL string or null
+}
+
 // Initialize Supabase Client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -48,9 +57,8 @@ export default function GolfPlatform() {
   const [chatCooldown, setChatCooldown] = useState(0);
   
   // Persistent Data States (Defaults)
-  const [chatFeed, setChatFeed] = useState([
-    { id: 1, username: 'GolfTrac_System', text: 'Welcome to the live SoCal conditions chat! Anyone playing today?', timestamp: 'Just now', isSystem: true, image: null }
-  ]);
+  const [chatFeed, setChatFeed] = useState<ChatMessage[]>([
+  { id: 1, username: 'GolfTrac_System', text: 'Welcome to the live SoCal conditions chat! Anyone playing today?', timestamp: 'Just now', isSystem: true, image: null }]);
   const [individualReports, setIndividualReports] = useState<any[]>([]);
   
   const [courses, setCourses] = useState([
